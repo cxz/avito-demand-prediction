@@ -1,8 +1,12 @@
 import os
 import logging
+import pickle
+
 from timeit import default_timer as timer
 from functools import wraps
+from pickle import HIGHEST_PROTOCOL
 
+import pandas as pd
 import numpy as np
 import scipy
 
@@ -31,14 +35,20 @@ def setup_logs(root, save_file):
 
 
 def save_npz(fpath, d):
-    if scipy.sparse.issparse(d):
+    if isinstance(d, pd.DataFrame):
+        with open("{}.pkl".format(fpath), "wb") as f:
+            pickle.dump(d, f, protocol=HIGHEST_PROTOCOL)
+    elif scipy.sparse.issparse(d):
         scipy.sparse.save_npz(fpath, d)
     else:
-        np.savez(fpath, d)
+        np.save(fpath, d)
 
 
 def load_npz(fpath):
-    if "sparse" in fpath:
+    if "dataframe" in fpath:
+        with open("{}.pkl".format(fpath), "rb") as f:
+            return pickle.load(f)
+    elif "sparse" in fpath:
         return scipy.sparse.load_npz(fpath)
     else:
         return np.load(fpath)

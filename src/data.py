@@ -1,3 +1,6 @@
+""" Preprocessing, caching and dataset loading.
+"""
+
 import logging
 
 import pandas as pd
@@ -7,8 +10,10 @@ from scipy.sparse import hstack
 from sklearn import preprocessing
 from sklearn.feature_extraction.text import CountVectorizer, TfidfVectorizer
 
-
 from util import cache, timeit
+
+import feature_base
+import feature_text_stats
 
 logger = logging.getLogger()
 
@@ -20,61 +25,48 @@ def load():
     return X, y
 
 
-@cache("../cache/20180601_traintestSample.sparse.npz")
-def load_traintestXSample():
-    from scipy.sparse import csr_matrix
-
-    return csr_matrix((3, 4), dtype=np.int8)
-
-
-@cache("../cache/20180601_traintestX.sparse.npz")
+@cache("../cache/20180601_traintestX")
 def load_traintestX():
-    df = pd.read_csv("../input/train.csv")
-    df.drop(["deal_probability"], axis=1, inplace=True)
+    X = load_traintestX_base()
+    X = pd.concat([X, load_traintestX_text_stats()], axis=1)
 
-    df_test = pd.read_csv("../input/test.csv")
-    df = pd.concat([df, df_test], axis=0)
+    if False:
+        text = ["title", "description"]
+        vectorizers = []
+        for c in text:
+            print("fitting %s" % c)
+            v = TfidfVectorizer(
+                max_features=100000, token_pattern="\w+", ngram_range=(1, 2)
+            )
+            v.fit(df[c].fillna(""))
+            vectorizers.append(v)
+        print(".")
 
-    categorical = [
-        "item_id",
-        "user_id",
-        "region",
-        "city",
-        "parent_category_name",
-        "category_name",
-        "item_seq_number",
-        "user_type",
-    ]
-    text = ["title", "description"]
-    target = "deal_probability"
-    for c in categorical:
-        print(c)
-        le = preprocessing.LabelEncoder()
-        df[c] = le.fit_transform(df[c])
+        print("title")
+        title = vectorizers[0].transform(df.loc[:, "title"].fillna("").values)
 
-    vectorizers = []
-    for c in text:
-        print("fitting %s" % c)
-        v = TfidfVectorizer(
-            max_features=100000, token_pattern="\w+", ngram_range=(1, 2)
-        )
-        v.fit(df[c].fillna(""))
-        vectorizers.append(v)
-    print(".")
+        print("desc")
+        desc = vectorizers[1].transform(df.loc[:, "description"].fillna("").values)
 
-    print("title")
-    title = vectorizers[0].transform(df.loc[:, "title"].fillna("").values)
+        print(".")
 
-    print("desc")
-    desc = vectorizers[1].transform(df.loc[:, "description"].fillna("").values)
+        X = hstack([df[categorical], df[["price"]], title, desc]).tocsr()
 
-    print(".")
-
-    X = hstack([df[categorical], df[["price"]], title, desc]).tocsr()
     return X
 
 
-@cache("../cache/20180601_trainy.npz")
+@cache("../cache/20180601_traintestX_base.dataframe")
+def load_traintestX_base():
+    return feature_base.run()
+
+
+@cache("../cache/20180601_traintestX_text_stats.dataframe")
+@timeit
+def load_traintestX_text_stats():
+    return feature_text_stats.run()
+
+
+@cache("../cache/20180601_trainy")
 def load_trainy():
     df = pd.read_csv("../input/train.csv", usecols=["deal_probability"])
     return df.deal_probability.values
