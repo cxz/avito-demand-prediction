@@ -2,7 +2,7 @@
 """
 
 import logging
-
+import pickle
 import pandas as pd
 import numpy as np
 
@@ -14,8 +14,9 @@ from util import cache, timeit
 
 import feature_base
 import feature_text_stats
-
-logger = logging.getLogger()
+import feature_tfidf1
+import feature_tfidf1_ridge
+import feature_tfidf2
 
 
 @timeit
@@ -25,32 +26,29 @@ def load():
     return X, y
 
 
-@cache("../cache/20180601_traintestX")
+@cache("../cache/20180601_traintestX.sparse")
 def load_traintestX():
     X = load_traintestX_base()
-    X = pd.concat([X, load_traintestX_text_stats()], axis=1)
-
-    if False:
-        text = ["title", "description"]
-        vectorizers = []
-        for c in text:
-            print("fitting %s" % c)
-            v = TfidfVectorizer(
-                max_features=100000, token_pattern="\w+", ngram_range=(1, 2)
+    column_names = list(X.columns)
+    cnt = 0
+    for df_fn in [
+        load_traintestX_text_stats,
+        load_traintestX_tfidf1,
+        load_traintestX_tfidf2,
+        load_traintestX_tfidf1_ridge,
+    ]:
+        df2 = df_fn()
+        if isinstance(df2, pd.DataFrame):
+            column_names.extend(list(df2.columns))
+        else:
+            column_names.extend(
+                ["{}_{}".format(cnt, idx) for idx in range(df2.shape[1])]
             )
-            v.fit(df[c].fillna(""))
-            vectorizers.append(v)
-        print(".")
+        cnt += 1
+        X = hstack([X, df2]).tocsr()
 
-        print("title")
-        title = vectorizers[0].transform(df.loc[:, "title"].fillna("").values)
-
-        print("desc")
-        desc = vectorizers[1].transform(df.loc[:, "description"].fillna("").values)
-
-        print(".")
-
-        X = hstack([df[categorical], df[["price"]], title, desc]).tocsr()
+    with open("../cache/20180601_traintestX.columns.pkl", "wb") as f:
+        pickle.dump(column_names, f)
 
     return X
 
@@ -66,6 +64,24 @@ def load_traintestX_text_stats():
     return feature_text_stats.run()
 
 
+@cache("../cache/20180601_traintestX_tfidf1.sparse")
+@timeit
+def load_traintestX_tfidf1():
+    return feature_tfidf1.run()
+
+
+@cache("../cache/20180601_traintestX_tfidf2")
+@timeit
+def load_traintestX_tfidf2():
+    return feature_tfidf2.run()
+
+
+@cache("../cache/20180601_traintestX_tfidf1_ridge")
+@timeit
+def load_traintestX_tfidf1_ridge():
+    return feature_tfidf1_ridge.run()
+
+
 @cache("../cache/20180601_trainy")
 def load_trainy():
     df = pd.read_csv("../input/train.csv", usecols=["deal_probability"])
@@ -73,4 +89,10 @@ def load_trainy():
 
 
 if __name__ == "__main__":
-    load()
+    logger = logging.getLogger()
+
+    load_traintestX_tfidf2()
+    # load_traintestX_tfidf1()
+    # load_traintestX_tfidf1_ridge()
+    X, y = load()
+    print(X.shape, y.shape)

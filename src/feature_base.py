@@ -18,18 +18,17 @@ def run():
         "param_3",
     ]
 
-    usecols = ["activation_date", "price"] + categorical
+    usecols = ["activation_date", "price", "image"] + categorical
 
     df = pd.read_csv("../input/train.csv", usecols=usecols)
     df_test = pd.read_csv("../input/test.csv", usecols=usecols)
     df = pd.concat([df, df_test], axis=0)
 
-    df["activation_date"] = pd.to_datetime(df.activation_date)
     df["price"] = np.log(df["price"] + 0.001)
     df["price"].fillna(df.price.mean(), inplace=True)
     df["image_top_1"].fillna(-1, inplace=True)
-
-    df["weekday"] = df["activation_date"].dt.weekday
+    df["has_image"] = (~df["image"].isnull()).astype(np.uint8)
+    df["weekday"] = pd.to_datetime(df.activation_date).dt.weekday
     categorical.append("weekday")
 
     lbl = preprocessing.LabelEncoder()
@@ -37,7 +36,7 @@ def run():
         df[col].fillna("NA")
         df[col] = lbl.fit_transform(df[col].astype(str))
 
-    df.drop(["activation_date"], axis=1, inplace=True)
+    df.drop(["activation_date", "image"], axis=1, inplace=True)
 
     print(df.columns)
     print(df.dtypes)

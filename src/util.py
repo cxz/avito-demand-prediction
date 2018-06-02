@@ -44,14 +44,25 @@ def save_npz(fpath, d):
         np.save(fpath, d)
 
 
-def load_npz(fpath):
+def cache_fname(fpath):
     if "dataframe" in fpath:
-        with open("{}.pkl".format(fpath), "rb") as f:
+        suffix = "pkl"
+    elif "sparse" in fpath:
+        suffix = "npz"
+    else:
+        suffix = "npy"
+    return "{}.{}".format(fpath, suffix)
+
+
+def load_npz(fpath):
+    real_fpath = cache_fname(fpath)
+    if "dataframe" in fpath:
+        with open(real_fpath, "rb") as f:
             return pickle.load(f)
     elif "sparse" in fpath:
-        return scipy.sparse.load_npz(fpath)
+        return scipy.sparse.load_npz(real_fpath)
     else:
-        return np.load(fpath)
+        return np.load(real_fpath)
 
 
 def cache(fpath):
@@ -59,7 +70,9 @@ def cache(fpath):
 
     def wrap(f):
         def wrapped(*args, **kwargs):
-            if os.path.exists(fpath):
+            real_fpath = cache_fname(fpath)
+
+            if os.path.exists(real_fpath):
                 logger.info(f"loading from {fpath}")
                 return load_npz(fpath)
             else:

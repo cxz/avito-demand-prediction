@@ -38,7 +38,6 @@ class Emoji:
 
 class Cleanup:
     def __init__(self):
-        self.x = None
         self.stemmer = SnowballStemmer("russian")
         self.stop_words = set(stopwords.words("russian"))
 
