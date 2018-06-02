@@ -44,27 +44,14 @@ def validate():
     ] + ["weekday"]
 
     params = {
-        "boosting_type": "gbdt",
-        "objective": "regression",
-        "metric": "rmse",
-        "num_leaves": 31,
-        "learning_rate": 0.1,
-        # 'feature_fraction': 0.5,
-        # 'bagging_fraction': 0.75,
-        "verbose": 0,
-    }
-
-    params = {
         "task": "train",
         "boosting_type": "gbdt",
         "objective": "regression",
         "metric": "rmse",
-        # 'max_depth': 15,
-        "num_leaves": 270,
+        "num_leaves": 300,
         "feature_fraction": 0.5,
-        "bagging_fraction": 0.75,
-        # 'bagging_freq': 5,
-        "learning_rate": 0.016,
+        "bagging_fraction": 0.5,
+        "learning_rate": 0.015,
         "verbose": 0,
     }
 

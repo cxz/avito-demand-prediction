@@ -17,6 +17,7 @@ import feature_text_stats
 import feature_tfidf1
 import feature_tfidf1_ridge
 import feature_tfidf2
+import feature_mean_price
 
 
 @timeit
@@ -33,7 +34,8 @@ def load_traintestX():
     cnt = 0
     for df_fn in [
         load_traintestX_text_stats,
-        load_traintestX_tfidf1,
+        # load_traintestX_tfidf1,
+        load_traintestX_mean_price,
         load_traintestX_tfidf2,
         load_traintestX_tfidf1_ridge,
     ]:
@@ -70,7 +72,7 @@ def load_traintestX_tfidf1():
     return feature_tfidf1.run()
 
 
-@cache("../cache/20180601_traintestX_tfidf2")
+@cache("../cache/20180601_traintestX_tfidf2.dataframe")
 @timeit
 def load_traintestX_tfidf2():
     return feature_tfidf2.run()
@@ -82,6 +84,11 @@ def load_traintestX_tfidf1_ridge():
     return feature_tfidf1_ridge.run()
 
 
+@cache("../cache/20180601_traintestX_mean_price")
+def load_traintestX_mean_price():
+    return feature_mean_price.run()
+
+
 @cache("../cache/20180601_trainy")
 def load_trainy():
     df = pd.read_csv("../input/train.csv", usecols=["deal_probability"])
@@ -91,8 +98,10 @@ def load_trainy():
 if __name__ == "__main__":
     logger = logging.getLogger()
 
-    load_traintestX_tfidf2()
+    # load_traintestX_tfidf2()
     # load_traintestX_tfidf1()
     # load_traintestX_tfidf1_ridge()
-    X, y = load()
-    print(X.shape, y.shape)
+    # X, y = load()
+    # print(X.shape, y.shape)
+    x1 = load_traintestX_mean_price()
+    print(x1.dtypes)

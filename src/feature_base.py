@@ -18,7 +18,7 @@ def run():
         "param_3",
     ]
 
-    usecols = ["activation_date", "price", "image"] + categorical
+    usecols = ["activation_date", "price", "image", "item_seq_number"] + categorical
 
     df = pd.read_csv("../input/train.csv", usecols=usecols)
     df_test = pd.read_csv("../input/test.csv", usecols=usecols)

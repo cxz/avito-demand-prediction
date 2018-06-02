@@ -1,6 +1,8 @@
 import unicodedata
 import sys
 import time
+import re
+
 import pandas as pd
 
 from nltk.corpus import stopwords
@@ -36,7 +38,25 @@ class Emoji:
         return len([c for c in str(text) if c in emojis])
 
 
-class Cleanup:
+class SimpleCleanup:
+    def __init__(self):
+        self.stop_words = set(stopwords.words("russian"))
+
+    def process(self, text):
+        tokens = wordpunct_tokenize(text.lower())
+        words = [
+            word for word in tokens if word.isalpha() and word not in self.stop_words
+        ]
+        return " ".join(words)
+
+    def process2(self, text):
+        textProc = text.lower()
+        textProc = re.sub("[!@#$_“”¨«»®´·º½¾¿¡§£₤‘’]", "", textProc)
+        textProc = " ".join(textProc.split())
+        return textProc
+
+
+class StemmingCleanup:
     def __init__(self):
         self.stemmer = SnowballStemmer("russian")
         self.stop_words = set(stopwords.words("russian"))

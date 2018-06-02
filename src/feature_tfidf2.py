@@ -19,26 +19,9 @@ from nltk.corpus import stopwords
 from nltk.corpus import stopwords
 from nltk.tokenize import wordpunct_tokenize
 
+import text
+
 logger = logging.getLogger()
-
-
-class Cleanup:
-    def __init__(self):
-        self.stop_words = set(stopwords.words("russian"))
-
-    def process(self, text):
-        tokens = wordpunct_tokenize(text)
-        tokens = [w.lower() for w in tokens]
-        words = [
-            word for word in tokens if word.isalpha() and word not in self.stop_words
-        ]
-        return " ".join(words)
-
-    def process2(self, text):
-        textProc = text.lower()
-        textProc = re.sub("[!@#$_“”¨«»®´·º½¾¿¡§£₤‘’]", "", textProc)
-        textProc = " ".join(textProc.split())
-        return textProc
 
 
 def get_col(col_name):
@@ -50,7 +33,7 @@ def run():
     df_test = pd.read_csv("../input/test.csv", usecols=["description", "title"])
     df = pd.concat([df, df_test], axis=0)
 
-    cleanup = Cleanup()
+    cleanup = text.SimpleCleanup()
 
     df["title"] = df["title"].fillna("").apply(lambda x: cleanup.process2(x))
     df["description"] = (

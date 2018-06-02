@@ -9,7 +9,7 @@ import text
 import super_pool
 
 logger = logging.getLogger()
-cleanup = text.Cleanup()
+cleanup = text.SimpleCleanup()
 emoji = text.Emoji()
 
 
