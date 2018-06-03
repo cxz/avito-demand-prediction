@@ -16,6 +16,24 @@ cleanup = text.SimpleCleanup()
 pool = super_pool.SuperPool()
 
 
+def load_pretrain():
+    # 1888424 300
+    with open("../data/wiki.ru.vec", "r") as f:
+        data = f.readlines()
+
+    samples, dim = data[0].split()
+    E = np.zeros(shape=(int(samples), int(dim)), dtype="float32")
+    word_index = {}
+
+    idx = 0
+    for line in tqdm(data[1:], total=E.shape[0]):
+        word, vec = line.split(" ", 1)
+        word_index[word] = idx
+        E[idx, :] = [float(i) for i in vec.split()]
+        idx += 1
+    return word_index, E
+
+
 def prepare():
     """ Cleanup and save one text per line to feed fasttext.
     """
@@ -39,17 +57,24 @@ def prepare():
 def to_numpy():
     """
     """
-    df = pd.read_csv("../data/title-description.bow.text")
-    out = np.zeros((len(df), 300), dtype=np.float32)
-    for i in tqdm(range(len(df))):
-        txt = df.iloc[i][0].split(" ")[-301:-1]
-        out[i, :] = [float(x) for x in txt]
-    np.save("../data/title-description.bow.npy", out)
+    wi, E = load_pretrain()
+    dim = E.shape[1]
+
+    txt_df = pd.read_csv("../cache/title-description.txt")
+    seq_len = 100
+    text_vec = np.zeros((len(txt_df), seq_len), dtype=np.uint32)
+    for idx, t in tqdm(enumerate(txt_df.text.values), total=len(txt_df)):
+        words = t.split(" ")
+        vec = [wi[w] if w in wi else 0 for w in words[:seq_len]]
+        padding = max(0, seq_len - len(vec))  # left pad
+        text_vec[idx, padding:] = vec
+
+    np.save("../cache/title-description-seq100.npy", text_vec)
 
 
 def run():
-    # prepare()
-    to_numpy()
+    prepare()
+    # to_numpy()
 
 
 if __name__ == "__main__":
