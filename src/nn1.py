@@ -64,7 +64,7 @@ def build_model(E, numerical, sequence):
     embedding = Embedding(E.shape[0], E.shape[1], weights=[E], trainable=False)(
         sequence
     )
-    x = SpatialDropout1D(0.1)(embedding)
+    x = SpatialDropout1D(0.05)(embedding)
     # x = Bidirectional(GRU(128, return_sequences=True,dropout=0.1,recurrent_dropout=0.1))(x)
     x = Bidirectional(CuDNNGRU(128, return_sequences=True))(x)
     x = Conv1D(32, kernel_size=3, padding="valid", kernel_initializer="glorot_uniform")(
@@ -100,9 +100,9 @@ def build_model(E, numerical, sequence):
     x = BatchNormalization()(x)
     x = Dropout(0.1)(x)
 
-    x = Dense(32, activation="relu")(x)
+    x = Dense(64, activation="relu")(x)
     x = BatchNormalization()(x)
-    x = Dropout(0.1)(x)
+    # x = Dropout(0.1)(x)
 
     x = Flatten()(x)
     predictions = Dense(1, activation="linear")(x)
@@ -181,11 +181,19 @@ def main(model=None):
     train_idx, val_idx = train_test_split(range(ntrain), test_size=0.2)
 
     X_train_dict = build_input(
-        X.iloc[train_idx], text_vec[train_idx], X_tfidf2.iloc[train_idx]
+        X.iloc[train_idx],
+        text_vec[train_idx],
+        X_tfidf2.iloc[train_idx],
+        # X_mean_price.iloc[train_idx]
     )
     y_train = y[train_idx]
 
-    X_val_dict = build_input(X.iloc[val_idx], text_vec[val_idx], X_tfidf2.iloc[val_idx])
+    X_val_dict = build_input(
+        X.iloc[val_idx],
+        text_vec[val_idx],
+        X_tfidf2.iloc[val_idx],
+        # X_mean_price.iloc[val_idx]
+    )
 
     y_val = y[val_idx]
 
@@ -206,5 +214,6 @@ def main(model=None):
 
 
 if __name__ == "__main__":
-    model = load_model("../tmp/weights.10-0.0517.hdf5")
+    model = load_model("../tmp/weights.10-0.0514.hdf5")
+    # model = None
     main(model)
