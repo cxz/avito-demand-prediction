@@ -6,10 +6,13 @@ import keras
 
 
 from keras.layers import *
+from keras.callbacks import *
 from keras.models import Model
 from keras.optimizers import Adam
 from keras.models import Sequential
+from keras.models import load_model
 from sklearn.model_selection import train_test_split
+from sklearn.metrics import mean_squared_error as mse
 
 import pandas as pd
 import numpy as np
@@ -61,7 +64,7 @@ def build_model(E, numerical, sequence):
     embedding = Embedding(E.shape[0], E.shape[1], weights=[E], trainable=False)(
         sequence
     )
-    x = SpatialDropout1D(0.2)(embedding)
+    x = SpatialDropout1D(0.1)(embedding)
     # x = Bidirectional(GRU(128, return_sequences=True,dropout=0.1,recurrent_dropout=0.1))(x)
     x = Bidirectional(CuDNNGRU(128, return_sequences=True))(x)
     x = Conv1D(32, kernel_size=3, padding="valid", kernel_initializer="glorot_uniform")(
@@ -89,13 +92,13 @@ def build_model(E, numerical, sequence):
         ]
     )
 
-    x = Dense(128, activation="relu")(inputs)
+    x = Dense(256, activation="relu")(inputs)
     x = BatchNormalization()(x)
-    x = Dropout(0.5)(x)
+    x = Dropout(0.2)(x)
 
-    # x = Dense(64, activation='relu')(x)
-    # x = BatchNormalization()(x)
-    # x = Dropout(0.1)(x)
+    x = Dense(128, activation="relu")(x)
+    x = BatchNormalization()(x)
+    x = Dropout(0.1)(x)
 
     x = Dense(32, activation="relu")(x)
     x = BatchNormalization()(x)
@@ -136,9 +139,18 @@ def build_input(X, text, X_tfidf2):
 
 
 def run(model, X_train, y_train, X_val, y_val):
+    ckpt = ModelCheckpoint(
+        "../tmp/weights.{epoch:02d}-{val_loss:.4f}.hdf5", verbose=1, save_best_only=True
+    )
 
+    reduce_lr = ReduceLROnPlateau(monitor="val_loss", factor=0.2, patience=5)
     model.fit(
-        X_train, y_train, epochs=10, batch_size=128, validation_data=(X_val, y_val)
+        X_train,
+        y_train,
+        epochs=20,
+        batch_size=128,
+        validation_data=(X_val, y_val),
+        callbacks=[reduce_lr, ckpt],
     )
 
     y_val_pred = model.predict(X_val, verbose=1, batch_size=1024)
@@ -147,7 +159,7 @@ def run(model, X_train, y_train, X_val, y_val):
     print(np.sqrt(mse(y_val, y_val_pred)))
 
 
-if __name__ == "__main__":
+def main(model=None):
     X = data.load_traintestX_base()
     y = np.load("../cache/20180601_trainy.npy")
     ntrain = y.shape[0]
@@ -179,8 +191,17 @@ if __name__ == "__main__":
     logger.info("loading fasttext weights..")
     E = fasttext.load_cached()
 
-    model = build_model(
-        E, X_train_dict["numerical"].shape[1], X_train_dict["sequence"].shape[1]
-    )
+    if model is None:
+        model = build_model(
+            E, X_train_dict["numerical"].shape[1], X_train_dict["sequence"].shape[1]
+        )
 
-    run(model, X_train_dict, y_train, X_val_dict, y_val)
+        run(model, X_train_dict, y_train, X_val_dict, y_val)
+    else:
+        y_val_pred = model.predict(X_val_dict, verbose=1, batch_size=1024)
+        print(np.sqrt(mse(y_val, y_val_pred)))
+
+
+if __name__ == "__main__":
+    model = load_model("../tmp/weights.07-0.05.hdf5")
+    main(model)
