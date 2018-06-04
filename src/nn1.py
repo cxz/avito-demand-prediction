@@ -176,6 +176,8 @@ def main(model=None):
 
     X_tfidf2 = data.load_traintestX_tfidf2()  # df
 
+    # X_mean_price = data.load_traintestX_mean_price()
+
     train_idx, val_idx = train_test_split(range(ntrain), test_size=0.2)
 
     X_train_dict = build_input(
@@ -184,6 +186,7 @@ def main(model=None):
     y_train = y[train_idx]
 
     X_val_dict = build_input(X.iloc[val_idx], text_vec[val_idx], X_tfidf2.iloc[val_idx])
+
     y_val = y[val_idx]
 
     logger.info("train/val loaded.")
@@ -203,5 +206,5 @@ def main(model=None):
 
 
 if __name__ == "__main__":
-    model = load_model("../tmp/weights.07-0.05.hdf5")
+    model = load_model("../tmp/weights.10-0.0517.hdf5")
     main(model)
