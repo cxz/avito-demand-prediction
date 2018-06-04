@@ -84,7 +84,7 @@ def load_traintestX_tfidf1_ridge():
     return feature_tfidf1_ridge.run()
 
 
-@cache("../cache/20180601_traintestX_mean_price")
+@cache("../cache/20180601_traintestX_mean_price.dataframe")
 def load_traintestX_mean_price():
     return feature_mean_price.run()
 
