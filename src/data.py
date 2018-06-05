@@ -41,7 +41,7 @@ def load_traintestX():
         load_traintestX_tfidf1,
         # load_traintestX_text_stats,
         # load_traintestX_mean_price,
-        # load_traintestX_user_stats,
+        load_traintestX_user_stats,
         # load_traintestX_target_encoded,
         # load_traintestX_tfidf2,
     ]:
