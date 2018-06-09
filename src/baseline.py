@@ -45,7 +45,13 @@ def validate():
         "param_1",
         "param_2",
         "param_3",
-    ]  #  + ["weekday"]
+    ] + [
+        # "weekday",
+        # "top_1_name_resnet50",
+        # "top_1_name_xception",
+        # "top_1_name_inceptionresnetv2",
+        # "top_1_name_vgg16",
+    ]
 
     params = {
         "task": "train",
@@ -81,11 +87,12 @@ def validate():
     )
 
     print("rmse:", np.sqrt(mean_squared_error(y_valid, gbm.predict(X_valid))))
+    gbm.save_model("baseline_model.txt")
 
     # temporary
     subm = pd.read_csv("../input/sample_submission.csv")
     subm.deal_probability = np.clip(gbm.predict(X_test), .0, 1.)
-    subm.to_csv("lgbm_2223b_2.csv", index=False)
+    subm.to_csv("baseline.csv", index=False)
 
 
 if __name__ == "__main__":

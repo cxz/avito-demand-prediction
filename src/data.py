@@ -20,7 +20,9 @@ import feature_tfidf2
 import feature_mean_price
 import feature_target_encoded
 import feature_user_stats
+import feature_user_stats2
 import feature_text2  # temporary
+import feature_image_cnn
 
 
 @timeit
@@ -41,9 +43,11 @@ def load_traintestX():
         load_traintestX_tfidf1,
         # load_traintestX_text_stats,
         # load_traintestX_mean_price,
-        load_traintestX_user_stats,
+        # load_traintestX_user_stats,
+        load_traintestX_user_stats2,
         # load_traintestX_target_encoded,
         # load_traintestX_tfidf2,
+        # load_traintestX_image_cnn,
     ]:
         df2 = df_fn()
         if isinstance(df2, pd.DataFrame):
@@ -105,6 +109,16 @@ def load_traintestX_user_stats():
     return feature_user_stats.run()
 
 
+@cache("../cache/20180601_traintestX_feature_user_stats2.dataframe")
+def load_traintestX_user_stats2():
+    return feature_user_stats2.run()
+
+
+@cache("../cache/20180601_traintestX_feature_image_cnn.dataframe")
+def load_traintestX_image_cnn():
+    return feature_image_cnn.run()
+
+
 @cache("../cache/20180601_trainy")
 def load_trainy():
     df = pd.read_csv("../input/train.csv", usecols=["deal_probability"])
@@ -122,6 +136,18 @@ if __name__ == "__main__":
     # x1 = load_traintestX_mean_price()
     # print(x1.dtypes)
 
-    load_traintestX_base()
-    load_traintestX_tfidf1()
-    feature_text2.run()
+    # load_traintestX_base()
+    # load_traintestX_tfidf1()
+    # feature_text2.run()
+
+    x = load_traintestX_image_cnn()
+    print(
+        x[
+            [
+                "top_1_name_resnet50",
+                "top_1_score_resnet50",
+                "top_1_name_vgg16",
+                "top_1_name_xception",
+            ]
+        ]
+    )

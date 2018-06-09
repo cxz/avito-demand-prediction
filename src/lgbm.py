@@ -13,7 +13,7 @@ import lightgbm as lgb
 from util import setup_logs
 import data
 
-DATA = "../data/run5"
+DATA = "../data/run7"
 
 logger = setup_logs("", os.path.join(DATA, "run.log"))
 
@@ -38,7 +38,13 @@ def load_train():
         "param_1",
         "param_2",
         "param_3",
-    ]  # + ["weekday"]
+    ] + [
+        # "weekday",
+        # "top_1_name_resnet50",
+        # "top_1_name_xception",
+        # "top_1_name_inceptionresnetv2",
+        # "top_1_name_vgg16",
+    ]
 
     return X, y, column_names, categorical
 
@@ -49,9 +55,11 @@ def load_test():
 
 
 def train(fold_no, X, y, column_names, categorical):
-    X_train, X_valid, y_train, y_valid = train_test_split(
-        X, y, test_size=0.10, random_state=23
-    )
+    X_train = X
+    y_train = y
+    # X_train, X_valid, y_train, y_valid = train_test_split(
+    #     X, y, test_size=0.10, random_state=23
+    # )
 
     lgb_train = lgb.Dataset(
         X_train,
@@ -61,7 +69,8 @@ def train(fold_no, X, y, column_names, categorical):
         free_raw_data=False,
     )
 
-    lgb_valid = lgb.Dataset(X_valid, y_valid, reference=lgb_train)
+    # lgb_valid = lgb.Dataset(X_valid, y_valid, reference=lgb_train)
+    lgb_valid = lgb.Dataset(X, y, reference=lgb_train)
 
     params = {
         "task": "train",
@@ -74,19 +83,20 @@ def train(fold_no, X, y, column_names, categorical):
         "learning_rate": 0.016,
         "verbose": 0,
     }
+
     gbm = lgb.train(
         params,
         lgb_train,
         num_boost_round=1500,
-        valid_sets=[lgb_train, lgb_valid],
-        early_stopping_rounds=50,
-        verbose_eval=200,
+        # valid_sets=[lgb_train, lgb_valid],
+        # early_stopping_rounds=50,
+        # verbose_eval=200,
     )
 
     best_iter = gbm.best_iteration
-    y_pred = gbm.predict(X_valid, num_iteration=best_iter)
-    score = np.sqrt(mean_squared_error(y_valid, y_pred))
-    logger.info(f"fold {fold_no} rmse: {score}")
+    # y_pred = gbm.predict(X_valid, num_iteration=best_iter)
+    # score = np.sqrt(mean_squared_error(y_valid, y_pred))
+    # logger.info(f"fold {fold_no} rmse: {score}")
 
     gbm.save_model(os.path.join(DATA, "fold{}_model.txt".format(fold_no)))
 
