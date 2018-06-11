@@ -359,7 +359,7 @@ def run():
     print(df.dtypes)
     print(df.head())
 
-    return df[["top_1_name_inceptionresnetv2"]]
+    return df[["top_1_name_resnet50", "top_1_name_vgg16"]]
 
 
 if __name__ == "__main__":

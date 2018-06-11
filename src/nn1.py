@@ -56,15 +56,21 @@ def build_model(E, numerical, sequence):
     e10 = Embedding(1275, 8)(i10)
     i11 = Input(shape=(1,), name="weekday")
     e11 = Embedding(6, 2)(i11)
-    i13 = Input(shape=(1,), name="has_image")
-    e13 = Embedding(1, 1)(i13)
+    # i13 = Input(shape=(1,), name="has_image")
+    # e13 = Embedding(1, 1)(i13)
+
+    i14 = Input(shape=(1,), name="top_1_name_resnet50")
+    e14 = Embedding(1, 1)(i14)
+
+    i15 = Input(shape=(1,), name="top_1_name_vgg16")
+    e15 = Embedding(1, 1)(i15)
 
     # sequence inputs
     sequence = Input(shape=(sequence,), name="sequence")
     embedding = Embedding(E.shape[0], E.shape[1], weights=[E], trainable=False)(
         sequence
     )
-    x = SpatialDropout1D(0.05)(embedding)
+    x = SpatialDropout1D(0.1)(embedding)
     # x = Bidirectional(GRU(128, return_sequences=True,dropout=0.1,recurrent_dropout=0.1))(x)
     x = Bidirectional(CuDNNGRU(128, return_sequences=True))(x)
     x = Conv1D(32, kernel_size=3, padding="valid", kernel_initializer="glorot_uniform")(
@@ -74,18 +80,22 @@ def build_model(E, numerical, sequence):
     max_pool = GlobalMaxPooling1D()(x)
 
     inputs = concatenate(
-        [  # e0,
+        [
+            # e0,
             e1,
             e2,
             e3,
             e4,
+            # e5,
             e6,
             e7,
             e8,
             e9,
             e10,
             e11,
-            e13,
+            # e13,
+            # e14,
+            # e15,
             n1,
             Reshape((-1, 32))(avg_pool),
             Reshape((-1, 32))(max_pool),
@@ -100,9 +110,9 @@ def build_model(E, numerical, sequence):
     x = BatchNormalization()(x)
     x = Dropout(0.1)(x)
 
-    x = Dense(64, activation="relu")(x)
+    x = Dense(32, activation="relu")(x)
     x = BatchNormalization()(x)
-    # x = Dropout(0.1)(x)
+    x = Dropout(0.1)(x)
 
     x = Flatten()(x)
     predictions = Dense(1, activation="linear")(x)
@@ -118,7 +128,9 @@ def build_model(E, numerical, sequence):
         i9,
         i10,
         i11,
-        i13,
+        # i13,
+        # i14,
+        # i15,
         numerical,
         sequence,
     ]
@@ -129,10 +141,22 @@ def build_model(E, numerical, sequence):
     return model
 
 
-def build_input(X, text, X_tfidf2):
+def build_input(X, text, X_tfidf2, X_target_encoded, X_user_stats, X_image_cnn):
     X_dict = dict([(c, X[c].values) for c in X.columns])
+
+    # print(X_image_cnn.head())
+    # for c in X_image_cnn.columns:
+    #    if c.startswith("top_1_name"):
+    #        print('adding ', c)
+    #        X_dict[c] = X_image_cnn[c]
+
     X_dict["numerical"] = np.hstack(
-        [X[["price", "item_seq_number"]].values, X_tfidf2.values]
+        [
+            X[["price", "item_seq_number"]].values,
+            X_tfidf2.values,
+            # X_target_encoded.values,
+            # X_user_stats.values
+        ]
     )
     X_dict["sequence"] = text
     return X_dict
@@ -154,8 +178,6 @@ def run(model, X_train, y_train, X_val, y_val):
     )
 
     y_val_pred = model.predict(X_val, verbose=1, batch_size=1024)
-    from sklearn.metrics import mean_squared_error as mse
-
     print(np.sqrt(mse(y_val, y_val_pred)))
 
 
@@ -177,6 +199,11 @@ def main(model=None):
     X_tfidf2 = data.load_traintestX_tfidf2()  # df
 
     # X_mean_price = data.load_traintestX_mean_price()
+    X_target_encoded = data.load_traintestX_target_encoded()
+
+    X_user_stats = data.load_traintestX_user_stats2()
+
+    X_image_cnn = data.load_traintestX_image_cnn()
 
     train_idx, val_idx = train_test_split(range(ntrain), test_size=0.2)
 
@@ -185,6 +212,9 @@ def main(model=None):
         text_vec[train_idx],
         X_tfidf2.iloc[train_idx],
         # X_mean_price.iloc[train_idx]
+        X_target_encoded.iloc[train_idx],
+        X_user_stats.iloc[train_idx],
+        X_image_cnn.iloc[train_idx],
     )
     y_train = y[train_idx]
 
@@ -193,6 +223,9 @@ def main(model=None):
         text_vec[val_idx],
         X_tfidf2.iloc[val_idx],
         # X_mean_price.iloc[val_idx]
+        X_target_encoded.iloc[val_idx],
+        X_user_stats.iloc[val_idx],
+        X_image_cnn.iloc[val_idx],
     )
 
     y_val = y[val_idx]
@@ -214,6 +247,6 @@ def main(model=None):
 
 
 if __name__ == "__main__":
-    model = load_model("../tmp/weights.10-0.0514.hdf5")
-    # model = None
+    # model = load_model("../tmp/weights.10-0.0514.hdf5")
+    model = None
     main(model)

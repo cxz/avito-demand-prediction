@@ -145,9 +145,9 @@ if __name__ == "__main__":
         x[
             [
                 "top_1_name_resnet50",
-                "top_1_score_resnet50",
-                "top_1_name_vgg16",
-                "top_1_name_xception",
+                # "top_1_score_resnet50",
+                # "top_1_name_vgg16",
+                # "top_1_name_xception",
             ]
         ]
     )
