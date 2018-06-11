@@ -59,11 +59,13 @@ def build_model(E, numerical, sequence):
     # i13 = Input(shape=(1,), name="has_image")
     # e13 = Embedding(1, 1)(i13)
 
+    e_cnn = Embedding(1000, 10)
+
     i14 = Input(shape=(1,), name="top_1_name_resnet50")
-    e14 = Embedding(1, 1)(i14)
+    e14 = e_cnn(i14)
 
     i15 = Input(shape=(1,), name="top_1_name_vgg16")
-    e15 = Embedding(1, 1)(i15)
+    e15 = e_cnn(i15)
 
     # sequence inputs
     sequence = Input(shape=(sequence,), name="sequence")
@@ -94,8 +96,8 @@ def build_model(E, numerical, sequence):
             e10,
             e11,
             # e13,
-            # e14,
-            # e15,
+            e14,
+            e15,
             n1,
             Reshape((-1, 32))(avg_pool),
             Reshape((-1, 32))(max_pool),
@@ -129,8 +131,8 @@ def build_model(E, numerical, sequence):
         i10,
         i11,
         # i13,
-        # i14,
-        # i15,
+        i14,
+        i15,
         numerical,
         sequence,
     ]
@@ -144,15 +146,16 @@ def build_model(E, numerical, sequence):
 def build_input(X, text, X_tfidf2, X_target_encoded, X_user_stats, X_image_cnn):
     X_dict = dict([(c, X[c].values) for c in X.columns])
 
-    # print(X_image_cnn.head())
-    # for c in X_image_cnn.columns:
-    #    if c.startswith("top_1_name"):
-    #        print('adding ', c)
-    #        X_dict[c] = X_image_cnn[c]
+    print(X_image_cnn.head())
+    for c in X_image_cnn.columns:
+        if c.startswith("top_1_name"):
+            print("adding ", c)
+            X_dict[c] = X_image_cnn[c]
 
     X_dict["numerical"] = np.hstack(
         [
-            X[["price", "item_seq_number"]].values,
+            X[["price"]].values,
+            # X[["item_seq_number"]].values,
             X_tfidf2.values,
             # X_target_encoded.values,
             # X_user_stats.values
@@ -247,6 +250,6 @@ def main(model=None):
 
 
 if __name__ == "__main__":
-    # model = load_model("../tmp/weights.10-0.0514.hdf5")
+    # model = load_model("../tmp/weights.10-0.0516.hdf5")
     model = None
     main(model)
